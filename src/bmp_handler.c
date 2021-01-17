@@ -41,12 +41,15 @@ enum read_status from_bmp( FILE* in, struct image* img ){
     img->width = header.biWidth;
 
     struct pixel* data = malloc(sizeof (struct pixel) * header.biWidth * header.biHeight);
-    struct pixel* trashbean = malloc(sizeof (struct pixel) * 4);
+    int8_t* trashbean[4];
 
     for(size_t i = 0; i < header.biHeight; i++) {
         if(fread_s(data+i*header.biWidth, (sizeof(struct pixel) * header.biWidth * header.biHeight)-i*header.biWidth, sizeof(struct pixel), header.biWidth,
-                   in) == 0) return READ_INVALID_BITS;
-        if(fread_s(trashbean, (sizeof(struct pixel) * 4), sizeof(uint8_t), 4-header.biWidth*3 % 4, in) == 0) return READ_INVALID_BITS;
+                   in) == 0) return READ_UNEXPECTED_END_OF_FILE;
+
+        size_t count = (4-header.biWidth * 3 % 4)%4;
+//        if(count != 0) count = 4 - count;
+        if(fread_s(trashbean, (sizeof(int8_t) * 4), sizeof(uint8_t), count, in) == 0 && count != 0) return READ_UNEXPECTED_END_OF_FILE;
     }
     img->data = data;
     return READ_OK;
@@ -54,11 +57,10 @@ enum read_status from_bmp( FILE* in, struct image* img ){
 }
 
 
-/*  serializer   */
-enum write_status to_bmp( FILE* out, struct image const* img ){
+struct bmp_header  generate_header(FILE* out, struct image const* img){
     struct bmp_header header = (struct bmp_header){
             .bfType = 19778,
-            .bfileSize = img->width * img->height + 54 + img->width%4*img->height, //NEED TO CHANGE
+            .bfileSize = img->width * img->height + 54 + img->width%4*img->height,
             .bfReserved = 0,
             .bOffBits = 54, //how long into the file the actual data starts
             .biSize = 40,
@@ -73,8 +75,12 @@ enum write_status to_bmp( FILE* out, struct image const* img ){
             .biClrUsed = 0,
             .biClrImportant = 0,
     };
+    return header;
+}
+/*  serializer   */
+enum write_status to_bmp( FILE* out, struct image const* img ){
+    struct bmp_header header = generate_header(out, img);
     fwrite(&header, sizeof (struct bmp_header), 1, out);
-
     uint8_t trash = {0};
     for(size_t i = 0; i < header.biHeight; i++) {
         fwrite(img->data+i*header.biWidth, sizeof(struct pixel), header.biWidth, out);

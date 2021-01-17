@@ -11,13 +11,13 @@
 struct image rotate( struct image const source ){
     struct image result = (struct image){.width = source.height, .height = source.width,
             .data = malloc(source.width*source.height*sizeof(struct pixel))};
-    uint64_t col, row, newCol, newRow;
 
     for(size_t i = 0; i < source.width*source.height; i++) {
-        row = i / source.width;
-        col = i % source.width;
-        newRow = col;
-        newCol = source.height - row - 1;
+        const uint64_t col = i % source.width,
+            row = i / source.width,
+            newCol = source.height - row - 1,
+            newRow = col;
+
         //printf("(%" PRIu8 ", %" PRIu8 ") -->> (%" PRIu8 ", %" PRIu8 ")", row, col, newRow, newCol);
         result.data[newRow * source.height + newCol] = source.data[i];
     }
@@ -37,14 +37,14 @@ void image_print(struct image const im){
     }
 }
 
-enum read_status from_file( char* name, struct image const* im, file_reader reader ){
+enum read_status from_file( const char* name, struct image const* im, file_reader reader ){
     FILE* input = NULL;
     if(fopen_s(&input, name, "rb")) return READ_CANNOT_OPEN_FILE;
     enum read_status result = reader(input, im);
     fclose(input);
     return result;
 }
-enum write_status to_file( char* name, struct image const* im, file_writer writer ){
+enum write_status to_file( const char* name, struct image const* im, file_writer writer ){
     FILE* output = NULL;
     if(fopen_s(&output, name, "wb")) return READ_CANNOT_OPEN_FILE;
     enum read_status result = writer(output, im);

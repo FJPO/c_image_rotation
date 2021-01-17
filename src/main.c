@@ -8,12 +8,12 @@ int main() {
 
     struct image im = {0};
 
-    printf("File reading finished with exit code %d\n", from_file("Input.bmp", &im, from_bmp));
+    fprintf(stderr,"File reading finished with exit code %d\n", from_file("Input.bmp", &im, from_bmp));
 
     struct image new = rotate(im);
 
 
-    printf("File writing finished with exit code %d\n", to_file("Output.bmp", &new, to_bmp));
+    fprintf(stderr,"File writing finished with exit code %d\n", to_file("Output.bmp", &new, to_bmp));
 
 //    image_print(im);
 
